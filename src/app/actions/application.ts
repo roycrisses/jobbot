@@ -29,7 +29,7 @@ export async function generateApplicationAction(jobId: string, resumeId: string)
     }
 
     // Create or Update Application
-    const application = await prisma.application.upsert({
+    await prisma.application.upsert({
       where: {
         userId_jobId: {
           userId: session.user.id,
@@ -67,5 +67,26 @@ export async function generateApplicationAction(jobId: string, resumeId: string)
   } catch (err) {
     console.error("Application generation failed:", err);
     return { error: "Internal server error during analysis." };
+  }
+}
+
+export async function updateApplicationStatusAction(applicationId: string, status: string) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "Unauthorized" };
+  }
+
+  try {
+    await prisma.application.update({
+      where: { id: applicationId },
+      data: { status },
+    });
+
+    revalidatePath("/dashboard/applications");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (err) {
+    console.error("Status update failed:", err);
+    return { error: "Failed to update status." };
   }
 }

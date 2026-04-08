@@ -11,68 +11,83 @@ export default async function DashboardPage() {
 
   const userId = session.user.id;
 
-  const [resumes, jobs, applications] = await Promise.all([
+  const [resumes, jobs, applications, successCount] = await Promise.all([
     prisma.resume.count({ where: { userId } }),
-    prisma.jobListing.count(), // global for now
+    prisma.jobListing.count(),
     prisma.application.count({ where: { userId } }),
+    prisma.application.count({ where: { userId, status: "Offer" } }),
   ]);
 
   const stats = [
-    { name: "Resumes Parsed", value: resumes, icon: FileText },
-    { name: "Jobs Aggregated", value: jobs, icon: Briefcase },
-    { name: "Applications Generated", value: applications, icon: Send },
-    { name: "Successful Applies", value: 0, icon: CheckCircle2 }, // Placeholder for actual state
+    { name: "Resumes Parsed", value: resumes, icon: FileText, color: "text-blue-600", bg: "bg-blue-50" },
+    { name: "Jobs Aggregated", value: jobs, icon: Briefcase, color: "text-purple-600", bg: "bg-purple-50" },
+    { name: "Applications Generated", value: applications, icon: Send, color: "text-orange-600", bg: "bg-orange-50" },
+    { name: "Successful Offers", value: successCount, icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
   ];
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-          Welcome back, {session.user.name || "User"}
+    <div className="space-y-10 max-w-6xl mx-auto px-4 sm:px-6">
+      <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+        <h2 className="text-4xl font-black tracking-tight text-gray-900 font-sans uppercase">
+          Welcome back, {session.user.name?.split(' ')[0] || "Agent"}
         </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Here is what's happening with your job search today.
+        <p className="mt-2 text-gray-500 font-medium text-lg">
+          Your job search velocity is currently optimized. Check your match signals below.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
+        {stats.map((stat, i) => (
           <div
             key={stat.name}
-            className="bg-white overflow-hidden border border-gray-200 rounded-xl"
+            className={`bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-in fade-in zoom-in-95 duration-500 delay-[${i * 100}ms]`}
           >
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <stat.icon className="h-6 w-6 text-gray-400" aria-hidden="true" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      {stat.name}
-                    </dt>
-                    <dd>
-                      <div className="text-lg font-bold text-gray-900">
-                        {stat.value}
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
+            <div className="flex flex-col space-y-4">
+              <div className={`${stat.bg} ${stat.color} w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner`}>
+                <stat.icon className="h-6 w-6" />
+              </div>
+              <div>
+                <dt className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">
+                  {stat.name}
+                </dt>
+                <dd className="text-3xl font-black text-gray-900 mt-1">
+                  {stat.value}
+                </dd>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Add standard simple empty state container for recent activity */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-200">
-          <h3 className="text-base font-semibold leading-6 text-gray-900">
-            Recent Activity
-          </h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-[2.5rem] shadow-sm overflow-hidden min-h-[400px]">
+          <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
+            <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">
+              Recruitment Pipeline
+            </h3>
+            <button className="text-xs font-bold text-blue-600 hover:text-blue-700">View All</button>
+          </div>
+          <div className="p-12 text-center space-y-4">
+            <div className="bg-gray-50 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto border border-gray-100">
+              <CircleDashed className="w-10 h-10 text-gray-200" />
+            </div>
+            <p className="text-gray-400 text-sm font-medium max-w-xs mx-auto">
+              Real-time activity logs will populate here once you start engaging with matches.
+            </p>
+          </div>
         </div>
-        <div className="p-6 text-center text-gray-500 text-sm">
-          No recent activity to display.
+
+        <div className="bg-black text-white rounded-[2.5rem] p-8 shadow-2xl flex flex-col justify-between overflow-hidden relative group">
+          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl group-hover:bg-blue-500/30 transition-all duration-700" />
+          <div className="relative z-10 space-y-6">
+            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-blue-400">Pro Signal</h4>
+            <p className="text-2xl font-bold leading-tight">
+              AI Insight: Tailor your last 3 applications to increase call-back rate by 40%.
+            </p>
+          </div>
+          <button className="relative z-10 mt-8 w-full py-4 bg-white text-black text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-gray-100 transition-all shadow-lg active:scale-95">
+            Optimize Now
+          </button>
         </div>
       </div>
     </div>
